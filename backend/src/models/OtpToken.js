@@ -4,7 +4,7 @@ const otpTokenSchema = new mongoose.Schema(
   {
     purpose: {
       type: String,
-      enum: ["signup", "reset-password"],
+      enum: ["signup", "reset-password", "create-admin", "create-cashier", "create-stockManager", "admin-reset-password", "staff-reset-password"],
       required: true
     },
     gmail: {

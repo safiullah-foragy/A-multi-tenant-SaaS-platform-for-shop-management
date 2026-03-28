@@ -8,6 +8,10 @@ import path from "path";
 import { env } from "./config/env.js";
 import authRoutes from "./routes/authRoutes.js";
 import shopRoutes from "./routes/shopRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import staffRoutes from "./routes/staffRoutes.js";
+import inventoryRoutes from "./routes/inventoryRoutes.js";
+import saleRoutes from "./routes/saleRoutes.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -39,6 +43,10 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/shops", shopRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/staff", staffRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/sales", saleRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

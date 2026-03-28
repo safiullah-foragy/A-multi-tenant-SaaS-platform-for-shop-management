@@ -8,6 +8,7 @@ const OwnerLoginPage = () => {
   const location = useLocation();
 
   const [shops, setShops] = useState([]);
+  const [loginRole, setLoginRole] = useState(null);
   const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
   const [message, setMessage] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
@@ -53,16 +54,43 @@ const OwnerLoginPage = () => {
     setLoading(true);
 
     try {
-      const { data } = await api.post("/api/auth/login", loginForm);
+      if (loginRole === "owner") {
+        const { data } = await api.post("/api/auth/login", loginForm);
 
-      if (data.owner?.shopId !== shopId) {
-        setAuthToken(null);
-        setMessage("This account is not the owner of the selected shop");
-        return;
+        if (data.owner?.shopId !== shopId) {
+          setAuthToken(null);
+          setMessage("This account is not the owner of the selected shop");
+          return;
+        }
+
+        setAuthToken(data.token);
+        localStorage.setItem("userRole", "owner");
+        navigate("/profile");
+      } else if (loginRole === "admin" || loginRole === "cashier" || loginRole === "stockManager") {
+        const route = loginRole === "admin" ? "/api/auth/admin-login" : "/api/auth/staff-login";
+        const resultKey = loginRole === "admin" ? "admin" : "staff";
+        
+        const { data } = await api.post(route, loginForm);
+
+        if (data[resultKey]?.shopId !== shopId) {
+          setAuthToken(null);
+          setMessage(`This account is not a valid ${loginRole} of the selected shop`);
+          return;
+        }
+        
+        if (loginRole !== "admin" && data.role !== loginRole) {
+          setAuthToken(null);
+          setMessage(`This account is registered as ${data.role}, not ${loginRole}`);
+          return;
+        }
+
+        setAuthToken(data.token);
+        localStorage.setItem("userRole", loginRole);
+        
+        if (loginRole === "admin") navigate("/admin-dashboard");
+        else if (loginRole === "stockManager") navigate("/stock-manager");
+        else navigate("/cashier");
       }
-
-      setAuthToken(data.token);
-      navigate("/profile");
     } catch (error) {
       setMessage(error.response?.data?.message || "Login failed");
     } finally {
@@ -71,6 +99,13 @@ const OwnerLoginPage = () => {
   };
 
   const triggerForgotPassword = async () => {
+    if (loginRole === "admin" || loginRole === "cashier" || loginRole === "stockManager") {
+      setForgotMode(true);
+      setForgotStep(1);
+      setMessage(`Please enter your ${loginRole} gmail.`);
+      return;
+    }
+
     setForgotMode(true);
     setMessage("");
     setLoading(true);
@@ -85,7 +120,7 @@ const OwnerLoginPage = () => {
     setResetForm((prev) => ({ ...prev, gmail: selectedShop.gmail }));
 
     try {
-      const { data } = await api.post("/api/auth/password/request-otp", {
+      const { data } = await api.post(`${loginRole === 'admin' ? '/api/auth/admin-forgot-password' : (loginRole === 'cashier' || loginRole === 'stockManager' ? '/api/auth/staff-forgot-password' : '/api/auth/password')}/request-otp`, {
         gmail: selectedShop.gmail
       });
 
@@ -106,7 +141,7 @@ const OwnerLoginPage = () => {
     setLoading(true);
 
     try {
-      const { data } = await api.post("/api/auth/password/request-otp", {
+      const { data } = await api.post(`${loginRole === 'admin' ? '/api/auth/admin-forgot-password' : (loginRole === 'cashier' || loginRole === 'stockManager' ? '/api/auth/staff-forgot-password' : '/api/auth/password')}/request-otp`, {
         gmail: resetForm.gmail
       });
 
@@ -126,7 +161,7 @@ const OwnerLoginPage = () => {
     setLoading(true);
 
     try {
-      await api.post("/api/auth/password/validate-otp", {
+      await api.post(`${loginRole === 'admin' ? '/api/auth/admin-forgot-password' : (loginRole === 'cashier' || loginRole === 'stockManager' ? '/api/auth/staff-forgot-password' : '/api/auth/password')}/validate-otp`, {
         gmail: resetForm.gmail,
         otp: resetForm.otp
       });
@@ -146,7 +181,7 @@ const OwnerLoginPage = () => {
     setLoading(true);
 
     try {
-      await api.post("/api/auth/password/verify-otp", {
+      await api.post(`${loginRole === 'admin' ? '/api/auth/admin-forgot-password' : (loginRole === 'cashier' || loginRole === 'stockManager' ? '/api/auth/staff-forgot-password' : '/api/auth/password')}/${loginRole !== 'owner' && loginRole !== null ? 'reset-password' : 'verify-otp'}`, {
         gmail: resetForm.gmail,
         otp: resetForm.otp,
         newPassword: resetForm.newPassword
@@ -169,7 +204,34 @@ const OwnerLoginPage = () => {
     <div className="owner-login-page">
       <main className="owner-layout">
         <section className="card owner-login-card">
-          <h1>{forgotMode ? "Forgot password" : "Login as owner"}</h1>
+          {!loginRole ? (
+            <div className="role-selection" style={{textAlign: 'center', padding: '1rem 0'}}>
+              <h1 style={{fontSize: '1.75rem', marginBottom: '0.5rem'}}>Welcome to {selectedShop?.shopName || "Shop"}</h1>
+              <p className="sub" style={{marginBottom: '2rem'}}>Please select your login role to continue</p>
+              
+              <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '260px', margin: '0 auto'}}>
+                <button type="button" onClick={() => setLoginRole("owner")} className="primary">
+                  Owner
+                </button>
+                <button type="button" onClick={() => setLoginRole("admin")} className="secondary" style={{backgroundColor: '#334155', color: '#f8fafc', borderColor: '#475569', padding: '0.6rem'}}>
+                  Admin
+                </button>
+                <button type="button" onClick={() => setLoginRole("cashier")} className="secondary" style={{backgroundColor: '#334155', color: '#f8fafc', borderColor: '#475569', padding: '0.6rem'}}>
+                  Cashier
+                </button>
+                <button type="button" onClick={() => setLoginRole("stockManager")} className="secondary" style={{backgroundColor: '#334155', color: '#f8fafc', borderColor: '#475569', padding: '0.6rem'}}>
+                  Stock Manager
+                </button>
+              </div>
+
+              {message && <p className="message" style={{marginTop: '2rem'}}>{message}</p>}
+              <p className="back-home" style={{marginTop: '2rem'}}>
+                <Link to="/">← Back to shops</Link>
+              </p>
+            </div>
+          ) : (
+            <>
+          <h1>{forgotMode ? "Forgot password" : `Login as ${loginRole}`}</h1>
           <p className="sub">{forgotMode ? "Get OTP on gmail and set a new password" : "Use gmail or phone number with your password"}</p>
 
           {!forgotMode ? (
@@ -188,7 +250,7 @@ const OwnerLoginPage = () => {
                 onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
                 required
               />
-              <button type="submit" disabled={loading}>
+              <button type="submit" disabled={loading} style={{maxWidth: "260px", margin: "0 auto", width: "100%"}}>
                 {loading ? "Signing in..." : "Login"}
               </button>
               <button
@@ -263,24 +325,17 @@ const OwnerLoginPage = () => {
               </button>
             </>
           )}
-
+          
+          <button type="button" className="text-link" onClick={() => { setLoginRole(null); setMessage(""); setForgotMode(false); }} style={{marginTop: '1rem'}}>
+            Change Role
+          </button>
+          
           {message && <p className="message">{message}</p>}
           <p className="back-home">
             <Link to="/">Back to shops</Link>
           </p>
-        </section>
-
-        <section className="card selected-shop-panel" aria-live="polite">
-          <h2>Selected shop</h2>
-          <div className="shop-preview-note">
-            <p className="preview-name">{selectedShop?.shopName || "Loading shop..."}</p>
-            <p>
-              <strong>Shop ID:</strong> #{shopId?.slice(-4) || "..."}
-            </p>
-            <p>
-              <strong>Location:</strong> {selectedShop?.shopLocation || "Not set"}
-            </p>
-          </div>
+          </>
+          )}
         </section>
       </main>
     </div>

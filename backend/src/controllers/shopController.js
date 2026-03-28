@@ -1,5 +1,12 @@
 import { z } from "zod";
 import { Owner } from "../models/Owner.js";
+import { createClient } from "@supabase/supabase-js";
+import path from "path";
+
+const supabase = createClient(
+  "https://dmpokqidduzmyztknwzj.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtcG9rcWlkZHV6bXl6dGtud3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5ODgwNjksImV4cCI6MjA4NjU2NDA2OX0.9E5LaKBjPKmoJRgw7FfZ2MHLYDDQ2geW4nO8mO3rkb8"
+);
 
 const updateProfileSchema = z.object({
   shopName: z.string().min(2).max(80).optional(),
@@ -46,7 +53,45 @@ export const updateMyProfile = async (req, res) => {
   }
 
   if (req.file) {
-    owner.shopLogoPath = `/uploads/${req.file.filename}`;
+    // Delete old image if it exists and is from Supabase
+    if (owner.shopLogoPath && owner.shopLogoPath.includes("supabase.co")) {
+      try {
+        const oldFileUrl = new URL(owner.shopLogoPath);
+        const parts = oldFileUrl.pathname.split("/");
+        // Assuming path is like /storage/v1/object/public/Shops_images/filename.ext
+        // We need the filename which is the last part
+        const filename = parts.pop();
+        if (filename) {
+          const { error: removeError } = await supabase.storage.from("Shops_images").remove([filename]);
+          if (removeError) {
+            console.error("Failed to delete old image from Supabase:", removeError);
+          }
+        }
+      } catch (err) {
+        console.error("Error parsing old image URL:", err);
+      }
+    }
+
+    // Upload new image
+    const safeExt = path.extname(req.file.originalname).toLowerCase();
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("Shops_images")
+      .upload(uniqueName, req.file.buffer, {
+        contentType: req.file.mimetype,
+      });
+
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError);
+      return res.status(500).json({ message: "Image upload failed" });
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("Shops_images")
+      .getPublicUrl(uploadData.path);
+
+    owner.shopLogoPath = publicUrlData.publicUrl;
   }
 
   await owner.save();

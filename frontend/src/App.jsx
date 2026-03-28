@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import OwnerLoginPage from "./pages/OwnerLoginPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminPage from "./pages/AdminPage";
+import StockManagerPage from "./pages/StockManagerPage";
+import CashierPage from "./pages/CashierPage";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("authToken");
@@ -18,6 +21,30 @@ const App = () => {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/stock-manager"
+        element={
+          <ProtectedRoute>
+            <StockManagerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cashier"
+        element={
+          <ProtectedRoute>
+            <CashierPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-dashboard"
+        element={
+          <ProtectedRoute>
+            <AdminPage />
           </ProtectedRoute>
         }
       />
