@@ -1,0 +1,522 @@
+ ^X
+ kill -9 %%
+ cd /run/media/sofi/Study/A-multi-tenant-SaaS-platform-for-shop-management/frontend && cat << 'EOF' > clean_css.js
+const fs = require('fs');
+let css = fs.readFileSync('src/styles/app.css', 'utf-8');
+
+// remove old profile-cover
+css = css.replace(/\.profile-cover\s*{[^}]*}/g, '');
+css = css.replace(/\.cover-pattern\s*{[^}]*}/g, '');
+
+// save
+fs.writeFileSync('src/styles/app.css', css);
+EOF
+node clean_css.js
+ pkill -9 nano
+ cd /run/media/sofi/Study/A-multi-tenant-SaaS-platform-for-shop-management/frontend && cat << 'EOF' > fix_profile_css.js
+import fs from 'fs';
+
+let content = fs.readFileSync('src/styles/app.css', 'utf-8');
+
+// Replace everything related to profile
+content = content.replace(/\.profile-page\s*{[^}]*}/g, '');
+content = content.replace(/\.profile-cover\s*{[^}]*}/g, '');
+content = content.replace(/\.cover-pattern\s*{[^}]*}/g, '');
+content = content.replace(/\.profile-card\s*{[^}]*}/g, '');
+content = content.replace(/\.logo-wrap\s*{[^}]*}/g, '');
+content = content.replace(/\.shop-meta\s*{[^}]*}/g, '');
+
+const newCSS = `
+.profile-page {
+  min-height: 100vh;
+  padding: 80px 32px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-card {
+  max-width: 500px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.profile-title {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.shop-meta {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+}
+.shop-meta strong {
+  color: #38bdf8;
+}
+`;
+
+fs.writeFileSync('src/styles/app.css', content + newCSS);
+EOF
+node fix_profile_css.js
+ cat src/pages/HomePage.jsx
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@500;700&display=swap");
+
+:root {
+  --bg: #f5f0e8;
+  --ink: #1f2933;
+  --brand: #005f73;
+  --brand-2: #ee9b00;
+  --card: rgba(255, 255, 255, 0.84);
+  --line: rgba(31, 41, 51, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+input,
+button,
+label {
+  font-family: inherit;
+}
+
+.page-shell {
+  min-height: 100vh;
+  padding: 40px 32px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f1f5f9;
+}
+
+.glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(50px);
+  opacity: 0.36;
+  pointer-events: none;
+}
+
+.glow.one {
+  width: 240px;
+  height: 240px;
+  background: #3b82f6;
+  top: -80px;
+  right: -40px;
+}
+
+.glow.two {
+  width: 300px;
+  height: 300px;
+  background: #8b5cf6;
+  bottom: -120px;
+  left: -60px;
+}
+
+.home-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.create-card {
+  max-width: 360px;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+.create-card h1 {
+  font-size: 1.25rem;
+}
+
+.right-blank-area {
+  min-height: 72vh;
+}
+
+.sticky-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  align-content: flex-start;
+  gap: 18px;
+  min-height: 100%;
+  padding-top: 6px;
+}
+
+.shop-sticky-note {
+  width: 100%;
+  min-height: 140px;
+  padding: 16px;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
+  transform: rotate(-1.3deg);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shop-sticky-note .shop-name {
+  line-height: 1.2;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.shop-sticky-note .shop-id {
+  font-family: "Space Grotesk", monospace;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.shop-sticky-note .enter-shop {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-top: auto;
+  color: #fff;
+}
+
+.shop-sticky-note:hover {
+  transform: rotate(0deg) translateY(-3px) scale(1.02);
+  box-shadow: 0 14px 22px rgba(0, 0, 0, 0.2);
+}
+
+.empty-shops-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  color: #4a5568;
+  opacity: 0.6;
+}
+
+.empty-shops-state h2 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.shop-sticky-note:nth-child(2n) {
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: #fff;
+  transform: rotate(1.1deg);
+}
+
+.shop-sticky-note:nth-child(3n) {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #fff;
+  transform: rotate(-0.5deg);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 10px;
+  font-family: "Sora", sans-serif;
+}
+
+.sub {
+  margin-top: 0;
+  color: #cbd5e1;
+}
+
+.stack {
+  display: grid;
+  gap: 10px;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.otp-box {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.profile-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+}
+
+.profile-logo.fallback {
+  display: grid;
+  place-items: center;
+  background: #0a9396;
+  color: #fff;
+  font-weight: 700;
+}
+
+.message {
+  margin-top: 12px;
+  color: #7f1d1d;
+}
+
+
+
+
+
+
+.profile-logo {
+  width: 132px;
+  height: 132px;
+  border: 5px solid #fff;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.92rem;
+  color: #94a3b8;
+}
+
+
+.secondary {
+  background: #6b7280;
+}
+
+.profile-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.owner-login-page {
+  min-height: 100vh;
+  padding: 40px 32px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f1f5f9;
+}
+
+.owner-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 40px;
+  align-items: start;
+}
+
+.owner-login-card {
+  position: sticky;
+  top: 24px;
+}
+
+.back-home {
+  margin: 12px 0 0;
+}
+
+.text-link {
+  background: transparent;
+  color: #38bdf8;
+  padding: 6px 2px;
+  text-align: left;
+  font-weight: 700;
+  border-radius: 0;
+}
+
+.text-link:hover {
+  transform: none;
+  text-decoration: underline;
+}
+
+.back-home a {
+  color: #c084fc;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.selected-shop-panel h2 {
+  color: #fff;
+
+  margin-bottom: 12px;
+}
+
+.shop-preview-note {
+  max-width: 260px;
+  min-height: 170px;
+  padding: 14px;
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+  transform: rotate(-0.8deg);
+}
+
+.preview-name {
+  margin: 0 0 12px;
+  font-family: "Sora", sans-serif;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .home-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .create-card {
+    max-width: 100%;
+  }
+
+  .right-blank-area {
+    min-height: 0;
+  }
+
+
+  .owner-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-login-card {
+    position: static;
+  }
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Modal Overlay Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.profile-page {
+  min-height: 100vh;
+  padding: 80px 32px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+
+
+
+.shop-meta strong {
+  color: #38bdf8;
+}
+
+.profile-card {
+  max-width: 500px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.profile-title {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.shop-meta {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+}
