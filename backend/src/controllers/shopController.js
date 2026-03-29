@@ -19,6 +19,30 @@ export const getShopList = async (req, res) => {
   return res.status(200).json({ shops });
 };
 
+export const getShopByCashier = async (req, res) => {
+  // This endpoint allows cashiers/staff to get their shop details using their shopId
+  const shopId = req.user?.shopId;
+  
+  if (!shopId) {
+    return res.status(400).json({ message: "No shop ID found" });
+  }
+
+  const owner = await Owner.findOne({ shopId }, { shopName: 1, shopLogoPath: 1, shopLocation: 1, shopId: 1 });
+  
+  if (!owner) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  return res.status(200).json({
+    shop: {
+      shopId: owner.shopId,
+      shopName: owner.shopName,
+      shopLogoPath: owner.shopLogoPath,
+      shopLocation: owner.shopLocation
+    }
+  });
+};
+
 export const getMyProfile = async (req, res) => {
   const owner = req.owner;
 

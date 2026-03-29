@@ -114,6 +114,7 @@ export const resolveBarcode = async (req, res) => {
       productId: product._id,
       productBarcode: barcode,
       batchId: oldestBatch._id,
+      batchCreatedAt: oldestBatch.createdAt,
       mrp,
       quantity,
       discount,
@@ -204,6 +205,7 @@ export const createBill = async (req, res) => {
         total: allocation.total,
         seller,
         sellingDate,
+        batchCreatedAt: updatedBatch.createdAt,
         cashierId: req.user._id
       });
     }
@@ -223,6 +225,7 @@ export const createBill = async (req, res) => {
 export const listSales = async (req, res) => {
   const sales = await Sale.find({ shopId: req.user.shopId })
     .populate("productId", "name barcode size")
+    .populate("batchId", "createdAt")
     .sort({ sellingDate: -1, createdAt: -1 })
     .limit(400);
 
@@ -240,8 +243,14 @@ export const listSales = async (req, res) => {
       });
     }
 
+    // Ensure batchCreatedAt is set - use populated batch data if not saved
+    const batchCreatedAt = row.batchCreatedAt || (row.batchId?.createdAt);
+    
     const group = grouped.get(key);
-    group.rows.push(row);
+    group.rows.push({
+      ...row.toObject(),
+      batchCreatedAt
+    });
     group.total += row.total;
   }
 

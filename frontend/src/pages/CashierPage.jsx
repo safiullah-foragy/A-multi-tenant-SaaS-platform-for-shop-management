@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import api, { setAuthToken } from "../api";
 import "../styles/app.css";
 
@@ -141,6 +143,126 @@ const CashierPage = () => {
     }
   };
 
+  const printBill = async (sale) => {
+    try {
+      setLoading(true);
+      
+      // Fetch shop info
+      let shop = null;
+      try {
+        const { data: shopData } = await api.get("/api/shops/by-cashier");
+        shop = shopData.shop;
+      } catch (err) {
+        console.log("Could not fetch shop info");
+      }
+
+      const doc = new jsPDF({ format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let yPosition = 10;
+
+      // Add shop name at top center
+      doc.setFontSize(14);
+      doc.setFont(undefined, "bold");
+      const shopNameX = pageWidth / 2;
+      const shopName = shop?.shopName || "Shop";
+      doc.text(shopName, shopNameX, yPosition + 8, { align: "center" });
+      
+      yPosition += 20;
+
+      // Bill details
+      doc.setFontSize(9);
+      doc.setFont(undefined, "normal");
+      doc.text(`Bill #${sale.billNumber}`, 10, yPosition);
+      yPosition += 5;
+      doc.text(`Seller: ${sale.seller}`, 10, yPosition);
+      yPosition += 5;
+      doc.text(`Date: ${new Date(sale.sellingDate).toLocaleString()}`, 10, yPosition);
+      yPosition += 10;
+
+      // Products Table
+      const tableColumn = ["Product Name", "Stock Date", "Barcode", "Qty", "MRP", "Discount", "Total"];
+      const tableRows = [];
+
+      sale.rows.forEach((row) => {
+        tableRows.push([
+          row.productId?.name || "Unknown",
+          new Date(row.batchCreatedAt).toLocaleDateString(),
+          row.productId?.barcode || row.barcode || "N/A",
+          row.quantity,
+          row.mrp,
+          row.discount || 0,
+          row.total
+        ]);
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: yPosition,
+        theme: "grid",
+        styles: {
+          fontSize: 7,
+          cellPadding: 2,
+          overflow: "linebreak",
+          halign: "center"
+        },
+        headStyles: {
+          fillColor: [40, 40, 40],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          halign: "center"
+        },
+        columnStyles: {
+          0: { cellWidth: 35, halign: "left" },
+          1: { cellWidth: 28, halign: "center" },
+          2: { cellWidth: 22, halign: "center" },
+          3: { cellWidth: 12, halign: "center" },
+          4: { cellWidth: 12, halign: "center" },
+          5: { cellWidth: 15, halign: "center" },
+          6: { cellWidth: 15, halign: "center" }
+        },
+        margin: { left: 5, right: 5, top: 5, bottom: 5 }
+      });
+
+      // Total Bill - positioned under the Total column
+      const finalY = doc.lastAutoTable?.finalY || yPosition + 50;
+      
+      // Calculate position under the Total column
+      // Table structure: left margin (5) + all columns up to Total (129) + Total column (15)
+      // Total column center is approximately at x = 136
+      const totalColumnX = 136;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, "bold");
+      doc.text("Total Bill:", 10, finalY + 5);
+      doc.text(`${sale.total}`, totalColumnX, finalY + 5, { align: "center" });
+
+      // Add shop logo at top right
+      if (shop && shop.shopLogoPath) {
+        const logoUrl = shop.shopLogoPath;
+        const logoSize = 20;
+        const logoX = pageWidth - logoSize - 12;
+        const logoY = 12;
+        
+        try {
+          // Add the logo image
+          doc.addImage(logoUrl, "JPEG", logoX, logoY, logoSize, logoSize);
+        } catch (err) {
+          console.log("Could not load logo image:", err);
+        }
+      }
+
+      // Save PDF
+      doc.save(`Bill_${sale.billNumber}.pdf`);
+      setMessage("Bill printed successfully");
+    } catch (err) {
+      console.error("Error printing bill:", err);
+      setMessage("Failed to print bill: " + (err.message || "Unknown error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     setAuthToken(null);
     navigate("/");
@@ -236,11 +358,66 @@ const CashierPage = () => {
           <p>No sales yet.</p>
         ) : (
           sales.map((sale) => (
-            <div key={sale.billNumber} style={{ marginBottom: "1rem", padding: "0.75rem", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "8px" }}>
-              <p style={{ margin: 0 }}><strong>Bill Number:</strong> {sale.billNumber}</p>
-              <p style={{ margin: "0.25rem 0" }}><strong>Selling Date:</strong> {new Date(sale.sellingDate).toLocaleString()}</p>
-              <p style={{ margin: "0.25rem 0" }}><strong>Seller:</strong> {sale.seller}</p>
-              <p style={{ margin: 0 }}><strong>Total:</strong> {sale.total}</p>
+            <div key={sale.billNumber} style={{ marginBottom: "2rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "8px" }}>
+              {/* Bill Header Info - No Table */}
+              <div style={{ marginBottom: "1.5rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.95rem" }}><strong>Bill Number:</strong> {sale.billNumber}</p>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.95rem" }}><strong>Seller:</strong> {sale.seller}</p>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.95rem" }}><strong>Date:</strong> {new Date(sale.sellingDate).toLocaleString()}</p>
+                </div>
+                <button 
+                  onClick={() => printBill(sale)}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    backgroundColor: "#2196f3",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: "0.9rem",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  🖨️ Print Bill
+                </button>
+              </div>
+
+              {/* Products Table */}
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid rgba(255,255,255,0.2)", backgroundColor: "rgba(255,255,255,0.05)" }}>
+                      <th style={{ padding: "0.75rem", textAlign: "left" }}>Product Name</th>
+                      <th style={{ padding: "0.75rem", textAlign: "left" }}>Stock Date</th>
+                      <th style={{ padding: "0.75rem", textAlign: "left" }}>Barcode</th>
+                      <th style={{ padding: "0.75rem", textAlign: "center" }}>Quantity</th>
+                      <th style={{ padding: "0.75rem", textAlign: "center" }}>MRP</th>
+                      <th style={{ padding: "0.75rem", textAlign: "center" }}>Discount</th>
+                      <th style={{ padding: "0.75rem", textAlign: "right" }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sale.rows.map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                        <td style={{ padding: "0.75rem" }}>{row.productId?.name || "Unknown"}</td>
+                        <td style={{ padding: "0.75rem", fontSize: "0.85rem" }}>{new Date(row.batchCreatedAt).toLocaleString()}</td>
+                        <td style={{ padding: "0.75rem" }}>{row.productId?.barcode || row.barcode || "N/A"}</td>
+                        <td style={{ padding: "0.75rem", textAlign: "center" }}>{row.quantity}</td>
+                        <td style={{ padding: "0.75rem", textAlign: "center" }}>{row.mrp}</td>
+                        <td style={{ padding: "0.75rem", textAlign: "center" }}>{row.discount || 0}</td>
+                        <td style={{ padding: "0.75rem", textAlign: "right" }}>{row.total}</td>
+                      </tr>
+                    ))}
+                    {/* Total Row */}
+                    <tr style={{ borderTop: "2px solid rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.08)", fontWeight: "bold" }}>
+                      <td colSpan="6" style={{ padding: "0.75rem", textAlign: "right" }}>Total Bill:</td>
+                      <td style={{ padding: "0.75rem", textAlign: "right" }}>{sale.total}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           ))
         )}

@@ -13,6 +13,7 @@ const saleSchema = new mongoose.Schema(
     total: { type: Number, required: true, min: 0 },
     seller: { type: String, required: true, trim: true },
     sellingDate: { type: Date, default: Date.now },
+    batchCreatedAt: { type: Date },
     cashierId: { type: mongoose.Schema.Types.ObjectId, ref: "Cashier", required: true }
   },
   { timestamps: true, collection: "sales" }
