@@ -201,142 +201,206 @@ const OwnerLoginPage = () => {
   };
 
   return (
-    <div className="owner-login-page">
-      <main className="owner-layout">
-        <section className="card owner-login-card">
-          {!loginRole ? (
-            <div className="role-selection" style={{textAlign: 'center', padding: '1rem 0'}}>
-              <h1 style={{fontSize: '1.75rem', marginBottom: '0.5rem'}}>Welcome to {selectedShop?.shopName || "Shop"}</h1>
-              <p className="sub" style={{marginBottom: '2rem'}}>Please select your login role to continue</p>
+    <div className="auth-page-shell">
+      <div className="glow one" />
+      <div className="glow two" />
+
+      <main className="auth-layout">
+        {!loginRole ? (
+          <section className="card role-card">
+            <div className="role-selection">
+              <h1>Welcome to {selectedShop?.shopName || "Shop"}</h1>
+              <p className="sub">Select your role to continue</p>
               
-              <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '260px', margin: '0 auto'}}>
-                <button type="button" onClick={() => setLoginRole("owner")} className="primary">
-                  Owner
+              <div className="role-buttons-grid">
+                <button type="button" onClick={() => setLoginRole("owner")} className="role-btn owner-btn">
+                  <span className="role-icon">👤</span>
+                  <span className="role-label">Owner</span>
                 </button>
-                <button type="button" onClick={() => setLoginRole("admin")} className="secondary" style={{backgroundColor: '#334155', color: '#f8fafc', borderColor: '#475569', padding: '0.6rem'}}>
-                  Admin
+                <button type="button" onClick={() => setLoginRole("admin")} className="role-btn admin-btn">
+                  <span className="role-icon">👨‍💼</span>
+                  <span className="role-label">Admin</span>
                 </button>
-                <button type="button" onClick={() => setLoginRole("cashier")} className="secondary" style={{backgroundColor: '#334155', color: '#f8fafc', borderColor: '#475569', padding: '0.6rem'}}>
-                  Cashier
+                <button type="button" onClick={() => setLoginRole("cashier")} className="role-btn cashier-btn">
+                  <span className="role-icon">🏪</span>
+                  <span className="role-label">Cashier</span>
                 </button>
-                <button type="button" onClick={() => setLoginRole("stockManager")} className="secondary" style={{backgroundColor: '#334155', color: '#f8fafc', borderColor: '#475569', padding: '0.6rem'}}>
-                  Stock Manager
+                <button type="button" onClick={() => setLoginRole("stockManager")} className="role-btn stock-btn">
+                  <span className="role-icon">📦</span>
+                  <span className="role-label">Stock Manager</span>
                 </button>
               </div>
 
-              {message && <p className="message" style={{marginTop: '2rem'}}>{message}</p>}
-              <p className="back-home" style={{marginTop: '2rem'}}>
-                <Link to="/">← Back to shops</Link>
-              </p>
+              {message && <p className="message error-message">{message}</p>}
+              
+              <Link to="/" className="back-link">
+                ← Back to shops
+              </Link>
             </div>
-          ) : (
-            <>
-          <h1>{forgotMode ? "Forgot password" : `Login as ${loginRole}`}</h1>
-          <p className="sub">{forgotMode ? "Get OTP on gmail and set a new password" : "Use gmail or phone number with your password"}</p>
+          </section>
+        ) : (
+          <div className="auth-container">
+            <div className="auth-left">
+              <div className="auth-left-content">
+                {forgotMode ? (
+                  <>
+                    <h2>Reset Password</h2>
+                    <p>Get OTP on your email and create a new password</p>
+                  </>
+                ) : (
+                  <>
+                    <h2>Welcome Back!</h2>
+                    <p>Enter your credentials to access your account</p>
+                  </>
+                )}
+                
+                <button 
+                  type="button"
+                  className="btn-white"
+                  onClick={() => {
+                    setForgotMode(false);
+                    setForgotStep(1);
+                    setResetCountdown(0);
+                    setResetForm({ gmail: "", otp: "", newPassword: "" });
+                    setMessage("");
+                  }}
+                >
+                  {forgotMode ? "Back to Login" : "Sign In"}
+                </button>
+              </div>
+            </div>
 
-          {!forgotMode ? (
-            <form className="stack" onSubmit={handleLogin}>
-              <input
-                type="text"
-                placeholder="Gmail or phone number"
-                value={loginForm.identifier}
-                onChange={(e) => setLoginForm((prev) => ({ ...prev, identifier: e.target.value }))}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
-                required
-              />
-              <button type="submit" disabled={loading} style={{maxWidth: "260px", margin: "0 auto", width: "100%"}}>
-                {loading ? "Signing in..." : "Login"}
-              </button>
-              <button
-                type="button"
-                className="text-link"
-                onClick={triggerForgotPassword}
-                disabled={loading}
-              >
-                Forgot password?
-              </button>
-            </form>
-          ) : (
-            <>
-              {forgotStep === 1 && (
-                <form className="stack" onSubmit={handleRequestResetOtp}>
-                  <input
-                    type="email"
-                    placeholder="Owner gmail"
-                    value={resetForm.gmail}
-                    onChange={(e) => setResetForm((prev) => ({ ...prev, gmail: e.target.value }))}
-                    required
-                  />
-                  <button type="submit" disabled={loading}>
-                    {loading ? "Sending OTP..." : "Get OTP"}
+            <div className="auth-right">
+              <div className="auth-form-wrapper">
+                <h3>{forgotMode ? "Password Recovery" : "Login"}</h3>
+                <p className="form-sub">{forgotMode ? "Recover your account access" : "Sign in to your account"}</p>
+
+                {!forgotMode ? (
+                  <form className="auth-form form-enter" onSubmit={handleLogin}>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        placeholder="E-mail or phone number"
+                        value={loginForm.identifier}
+                        onChange={(e) => setLoginForm((prev) => ({ ...prev, identifier: e.target.value }))}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+                        required
+                        className="form-input"
+                      />
+                    </div>
+                    <button type="submit" disabled={loading} className="btn-submit">
+                      {loading ? "Signing in..." : "Sign In"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-link"
+                      onClick={triggerForgotPassword}
+                      disabled={loading}
+                    >
+                      Forgot password?
+                    </button>
+                  </form>
+                ) : (
+                  <form className="auth-form form-enter">
+                    {forgotStep === 1 && (
+                      <div className="forgot-step step-enter">
+                        <div className="form-group">
+                          <input
+                            type="email"
+                            placeholder="Enter your e-mail"
+                            value={resetForm.gmail}
+                            onChange={(e) => setResetForm((prev) => ({ ...prev, gmail: e.target.value }))}
+                            required
+                            className="form-input"
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={handleRequestResetOtp}
+                          disabled={loading}
+                          className="btn-submit"
+                        >
+                          {loading ? "Sending OTP..." : "Get OTP"}
+                        </button>
+                      </div>
+                    )}
+
+                    {forgotStep === 2 && (
+                      <div className="forgot-step step-enter">
+                        <div className="form-group">
+                          <input
+                            type="text"
+                            placeholder="Enter OTP code"
+                            value={resetForm.otp}
+                            onChange={(e) => setResetForm((prev) => ({ ...prev, otp: e.target.value }))}
+                            required
+                            className="form-input"
+                          />
+                          <small className="countdown">Time left: {resetCountdown}s</small>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={handleValidateResetOtp}
+                          disabled={loading || resetCountdown === 0}
+                          className="btn-submit"
+                        >
+                          {loading ? "Verifying..." : "Verify OTP"}
+                        </button>
+                      </div>
+                    )}
+
+                    {forgotStep === 3 && (
+                      <div className="forgot-step step-enter">
+                        <div className="form-group">
+                          <input
+                            type="password"
+                            placeholder="New password"
+                            value={resetForm.newPassword}
+                            onChange={(e) => setResetForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                            required
+                            className="form-input"
+                          />
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={handleVerifyResetOtp}
+                          disabled={loading}
+                          className="btn-submit"
+                        >
+                          {loading ? "Updating..." : "Update Password"}
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                )}
+
+                {message && <p className="message error-message">{message}</p>}
+
+                <div className="form-footer">
+                  <button 
+                    type="button" 
+                    className="btn-link secondary"
+                    onClick={() => { setLoginRole(null); setMessage(""); setForgotMode(false); }}
+                  >
+                    Change Role
                   </button>
-                </form>
-              )}
-
-              {forgotStep === 2 && (
-                <form className="stack otp-box" onSubmit={handleValidateResetOtp}>
-                  <input
-                    type="text"
-                    placeholder="Enter OTP"
-                    value={resetForm.otp}
-                    onChange={(e) => setResetForm((prev) => ({ ...prev, otp: e.target.value }))}
-                    required
-                  />
-                  <button type="submit" disabled={loading || resetCountdown === 0}>
-                    {loading ? "Verifying..." : "Verify OTP"}
-                  </button>
-                  <small>Time left: {resetCountdown}s</small>
-                </form>
-              )}
-
-              {forgotStep === 3 && (
-                <form className="stack otp-box" onSubmit={handleVerifyResetOtp}>
-                  <input
-                    type="password"
-                    placeholder="New password"
-                    value={resetForm.newPassword}
-                    onChange={(e) => setResetForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                    required
-                  />
-                  <button type="submit" disabled={loading}>
-                    {loading ? "Updating..." : "Update Password"}
-                  </button>
-                </form>
-              )}
-
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => {
-                  setForgotMode(false);
-                  setForgotStep(1);
-                  setResetCountdown(0);
-                  setResetForm({ gmail: "", otp: "", newPassword: "" });
-                  setMessage("");
-                }}
-              >
-                Back to login
-              </button>
-            </>
-          )}
-          
-          <button type="button" className="text-link" onClick={() => { setLoginRole(null); setMessage(""); setForgotMode(false); }} style={{marginTop: '1rem'}}>
-            Change Role
-          </button>
-          
-          {message && <p className="message">{message}</p>}
-          <p className="back-home">
-            <Link to="/">Back to shops</Link>
-          </p>
-          </>
-          )}
-        </section>
+                  <Link to="/" className="btn-link secondary">
+                    Back to Shops
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
